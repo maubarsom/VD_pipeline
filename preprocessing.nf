@@ -179,7 +179,7 @@ process hostrm_mapping_stats{
   script:
   """
   samtools view -hSb mapped.sam | samtools flagstat - > ${sample_id}_${read_type}.flagstat
-  samtools view -hSb mapped.sam | samtools idxstats - > ${sample_id}_${read_type}.idxstats
+  samtools view -hSb mapped.sam | samtools sort -@ 2 - | samtools idxstats - > ${sample_id}_${read_type}.idxstats
   """
 }
 
