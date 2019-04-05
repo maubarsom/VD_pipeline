@@ -48,7 +48,7 @@ process qf_trimgalore{
   script:
   """
   mkdir 2_trimgalore
-  trim_galore -q 20 --fastqc --fastqc_args '-k 10 -t ${task.cpus}' --illumina --paired --gzip \
+  trim_galore -q 20 --fastqc --fastqc_args '-t ${task.cpus}' --illumina --paired --gzip \
   	--stringency 5 --length 60 --output_dir 2_trimgalore --trim1 \
   	--retain_unpaired -r1 85 -r2 85 ${reads[0]} ${reads[1]}
 
