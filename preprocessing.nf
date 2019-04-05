@@ -25,7 +25,7 @@ process qf_raw_fastqc{
   set sample_id,file(reads) from qf_raw_fastqc_in
 
   output:
-  file '*.html' into raw_fastqc_out
+  file '*' into raw_fastqc_out
 
   script:
   """
@@ -179,7 +179,7 @@ process hostrm_mapping_stats{
   script:
   """
   samtools view -hSb mapped.sam | samtools flagstat - > ${sample_id}_${read_type}.flagstat
-  samtools view -hSb mapped.sam | samtools idxstats - > ${sample_id}_${read_type}.idxstats
+  samtools view -hSb mapped.sam | samtools sort -@ 2 - | samtools idxstats - > ${sample_id}_${read_type}.idxstats
   """
 }
 
