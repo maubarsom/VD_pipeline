@@ -162,24 +162,39 @@ hostrm_map_to_grch38_unpaired_out.into{ unpaired_stats_in ;
                                         sam_unpaired_to_fastq_in }
 
 //Combine both pe and unpaired sams into single channel for hostrm_mapping_stats
-mapping_stats_in = pe_stats_in.mix(unpaired_stats_in)
+pe_stats_in.mix(unpaired_stats_in).into{hostrm_mapping_flagstat_in;
+                                        hostrm_mapping_idxstats_in}
 
-process hostrm_mapping_stats{
+process hostrm_mapping_flagstat{
   tag "${sample_id}_${read_type}"
   publishDir "preprocessing/${sample_id}/4_hostrm", mode:'copy'
 
-
   input:
-  set sample_id, read_type, 'mapped.sam' from mapping_stats_in
+  set sample_id, read_type, 'mapped.sam' from hostrm_mapping_flagstat_in
 
   output:
   file "${sample_id}_${read_type}.flagstat" into hostrm_mapping_flagstat_out
-  file "${sample_id}_${read_type}.idxstats" into hostrm_mapping_idxstats_out
 
   script:
   """
   samtools view -hSb mapped.sam | samtools flagstat - > ${sample_id}_${read_type}.flagstat
-  samtools view -hSb mapped.sam | samtools sort -@ 2 - | samtools idxstats - > ${sample_id}_${read_type}.idxstats
+  """
+}
+
+process hostrm_mapping_idxstats{
+  tag "${sample_id}_${read_type}"
+  publishDir "preprocessing/${sample_id}/4_hostrm", mode:'copy'
+
+  input:
+  set sample_id, read_type, 'mapped.sam' from hostrm_mapping_idxstats_in
+
+  output:
+  file "${sample_id}_${read_type}.idxstats" into hostrm_mapping_idxstats_out
+
+  script:
+  """
+  samtools view -hSb -F4 -F256 mapped.sam | samtools sort -@ 7 - sorted.bam
+  samtools idxstats sorted.bam > ${sample_id}_${read_type}.idxstats
   """
 }
 
