@@ -25,7 +25,7 @@ process qf_raw_fastqc{
   set sample_id,file(reads) from qf_raw_fastqc_in
 
   output:
-  file '*.html' into raw_fastqc_out
+  file '*' into raw_fastqc_out
 
   script:
   """
