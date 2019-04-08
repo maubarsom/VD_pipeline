@@ -193,7 +193,7 @@ process hostrm_mapping_idxstats{
 
   script:
   """
-  samtools view -hSb -F4 -F256 mapped.sam | samtools sort -@ 7 - sorted.bam
+  samtools view -hSb -F4 -F256 mapped.sam | samtools sort -@ 7 -T samsort_tmp -o sorted.bam  - 
   samtools idxstats sorted.bam > ${sample_id}_${read_type}.idxstats
   """
 }
