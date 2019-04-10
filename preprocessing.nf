@@ -124,12 +124,13 @@ process hostrm_map_to_grch38_pe{
   set sample_id, 'r*.fq.gz' from cutadapt_pe_out
 
   output:
-  set sample_id, val('pe'), 'pe.sam' into hostrm_map_to_grch38_pe_out
+  set sample_id, val('pe'), 'pe.bam' into hostrm_map_to_grch38_pe_out
   file "${sample_id}_pe_bowtie2.log" into bowtie2_pe_log
 
   script:
   """
-  bowtie2 --local --very-sensitive-local -t -p ${task.cpus} -x ${params.hostrm_bowtie2_idx} -1 r1.fq.gz -2 r2.fq.gz > pe.sam 2> ${sample_id}_pe_bowtie2.log
+  bowtie2 --local --very-sensitive-local -t -p ${task.cpus} -x ${params.hostrm_bowtie2_idx} \
+     -1 r1.fq.gz -2 r2.fq.gz 2> ${sample_id}_pe_bowtie2.log | samtools view -hSb - > pe.bam
   """
 }
 
@@ -141,12 +142,13 @@ process hostrm_map_to_grch38_unpaired{
   set sample_id, 'unpaired.fq.gz' from cutadapt_unpaired_out
 
   output:
-  set sample_id, val('unpaired'), 'unpaired.sam' into hostrm_map_to_grch38_unpaired_out
+  set sample_id, val('unpaired'), 'unpaired.bam' into hostrm_map_to_grch38_unpaired_out
   file "${sample_id}_unpaired_bowtie2.log" into bowtie2_se_log
 
   script:
   """
-  bowtie2 --local --very-sensitive-local -t -p ${task.cpus} -x ${params.hostrm_bowtie2_idx} -U unpaired.fq.gz > unpaired.sam 2> ${sample_id}_unpaired_bowtie2.log
+  bowtie2 --local --very-sensitive-local -t -p ${task.cpus} -x ${params.hostrm_bowtie2_idx} \
+    -U unpaired.fq.gz 2> ${sample_id}_unpaired_bowtie2.log | samtools view -hSb - > unpaired.bam
   """
 }
 
@@ -170,14 +172,14 @@ process hostrm_mapping_flagstat{
   publishDir "preprocessing/${sample_id}/4_hostrm", mode:'copy'
 
   input:
-  set sample_id, read_type, 'mapped.sam' from hostrm_mapping_flagstat_in
+  set sample_id, read_type, 'mapped.bam' from hostrm_mapping_flagstat_in
 
   output:
   file "${sample_id}_${read_type}.flagstat" into hostrm_mapping_flagstat_out
 
   script:
   """
-  samtools view -hSb mapped.sam | samtools flagstat - > ${sample_id}_${read_type}.flagstat
+  samtools flagstat mapped.bam > ${sample_id}_${read_type}.flagstat
   """
 }
 
@@ -186,15 +188,14 @@ process hostrm_mapping_idxstats{
   publishDir "preprocessing/${sample_id}/4_hostrm", mode:'copy'
 
   input:
-  set sample_id, read_type, 'mapped.sam' from hostrm_mapping_idxstats_in
+  set sample_id, read_type, 'mapped.bam' from hostrm_mapping_idxstats_in
 
   output:
   file "${sample_id}_${read_type}.idxstats" into hostrm_mapping_idxstats_out
 
   script:
   """
-  samtools view -hSb -F4 -F256 mapped.sam | samtools sort -@ 7 -T samsort_tmp -o sorted.bam  - 
-  samtools idxstats sorted.bam > ${sample_id}_${read_type}.idxstats
+  samtools view -u -F4 -F256 mapped.bam | samtools sort -@ 7 -T samsort_tmp  - | samtools idxstats - > ${sample_id}_${read_type}.idxstats
   """
 }
 
@@ -203,14 +204,14 @@ process hostrm_sam_pe_to_fastq{
   publishDir "preprocessing/${sample_id}", mode:'link'
 
   input:
-  set sample_id, read_type, 'pe.sam' from sam_pe_to_fastq_in
+  set sample_id, read_type, 'pe.bam' from sam_pe_to_fastq_in
 
   output:
   set sample_id, read_type, "${sample_id}_*.fq.gz" into sam_pe_to_fastq_out
 
   script:
   """
-  samtools view -hSb -f12 -F256 pe.sam | samtools fastq -1 ${sample_id}_1.fq.gz -2 ${sample_id}_2.fq.gz -
+  samtools view -u -f12 -F256 pe.bam | samtools fastq -1 ${sample_id}_1.fq.gz -2 ${sample_id}_2.fq.gz -
   """
 }
 
@@ -219,13 +220,13 @@ process hostrm_sam_unpaired_to_fastq{
   publishDir "preprocessing/${sample_id}", mode:'link'
 
   input:
-  set sample_id, read_type, 'unpaired.sam' from sam_unpaired_to_fastq_in
+  set sample_id, read_type, 'unpaired.bam' from sam_unpaired_to_fastq_in
 
   output:
   set sample_id, read_type, "${sample_id}_unpaired.fq.gz" into sam_unpaired_to_fastq_out
 
   script:
   """
-  samtools view -hSb -f4 -F256 unpaired.sam | samtools fastq -0 ${sample_id}_unpaired.fq.gz -
+  samtools view -u -f4 -F256 unpaired.bam | samtools fastq -0 ${sample_id}_unpaired.fq.gz -
   """
 }
